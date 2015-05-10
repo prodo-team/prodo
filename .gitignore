@@ -1,0 +1,11 @@
+# ignore yapps directory
+/yapps
+/yapps/*
+/prodo.bat
+/makeParser.py
+/output.py
+/prodo.cpp.g
+/prodo.h
+/*.pyc
+/testCode.prodo
+/yapps2.pdf
