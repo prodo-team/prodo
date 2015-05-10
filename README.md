@@ -5,6 +5,7 @@ A small imperative programming language for our CS 150 class. With a grammar ins
 ## Features
 
 Currently, Prodo only supports a very minimal set of features, mostly taken from C, Python, C++ and Ruby. These are the bare essentials for a language, including:
+
 1. Primitive Data Types
     * int (Integer)
     * real (Floating Point)
