@@ -7,7 +7,7 @@ parser Prodo:
     token END: r'$'                                 # end of input
     token NEWLINE: r'([\n])+'                       # new line
     token INT: r'([0-9])+|([-][0-9])+'              # int literal
-    token REAL: r'[0-9]+[.][0-9]+|[-][0-9]+[.][0-9]+'                  # float literal
+    token REAL: r'[0-9]+[.][0-9]+|[-][0-9]+[.][0-9]+' # float literal
     token STRING: r'"([^\\"]+|\\.)*"'               # string literal
     token ID: r'[a-zA-Z]([a-zA-Z0-9$_@])*'          # name/identifier
     token TYPE: r'[a-zA-Z_]'                        # typenames (letters & underscore only)
@@ -40,7 +40,7 @@ parser Prodo:
                    | jump_statement         {{ return jump_statement }}
                    | conditional_statement  {{ return conditional_statement }}
                    | iterative_statement    {{ return iterative_statement }}
-                   | r'[~](.)*'             {{ return "" }}
+                   | r'[~](.)*'             {{ return "\n" }}
 
     rule exp_statement : declaration_exp              {{ return declaration_exp }} # don't add semicolon
                        | identified_exp               {{ return identified_exp }}

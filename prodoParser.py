@@ -157,7 +157,7 @@ class Prodo(runtime.Parser):
             return iterative_statement
         else: # == "r'[~](.)*'"
             self._scan("r'[~](.)*'", context=_context)
-            return ""
+            return "\n"
 
     def exp_statement(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'exp_statement', [])
