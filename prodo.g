@@ -235,12 +235,11 @@ parser Prodo:
                                                             {{ return S }}
                               )
                               |
-                              ('loop'                      {{ S = "__dwf = 1\n" }}
-                               p_compound_statement
-                               'while''\\|'                {{ S += "while(" }}
-                               boolean_exp                 {{ S += boolean_exp }}
-                               '\\|'                       {{ S += " and __dwf):" }}
-                                                           {{ S += p_compound_statement }}
+                              ('loop'                      {{ S = "" }}
+                               compound_statement          {{ stat = compound_statement + "\t" }}
+                               '\\|'
+                               boolean_exp                 {{ stat += "if not (" + boolean_exp + "): break;\n" }}
+                               '\\|'                       {{ S = "while(1):" + stat }}
                                                            {{ return S }}
                               )
 

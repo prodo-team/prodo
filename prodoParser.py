@@ -630,16 +630,14 @@ class Prodo(runtime.Parser):
             return S
         else: # == "'loop'"
             self._scan("'loop'", context=_context)
-            S = "__dwf = 1\n"
-            p_compound_statement = self.p_compound_statement(_context)
-            self._scan("'while'", context=_context)
+            S = ""
+            compound_statement = self.compound_statement(_context)
+            stat = compound_statement + "\t"
             self._scan("'\\\\|'", context=_context)
-            S += "while("
             boolean_exp = self.boolean_exp(_context)
-            S += boolean_exp
+            stat += "if not (" + boolean_exp + "): break;\n"
             self._scan("'\\\\|'", context=_context)
-            S += " and __dwf):"
-            S += p_compound_statement
+            S = "while(1):" + stat
             return S
 
 

@@ -13,7 +13,7 @@ code = ""
 
 try:
     code = prodoParser.parse('super', f_input)
-except TypeError:
+except NameError:
     fatal_err("A syntactic error has been encountered.")
 
 if DEBUG:
