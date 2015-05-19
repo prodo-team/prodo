@@ -11,13 +11,13 @@ parser Prodo:
     token STRING: r'"([^\\"]+|\\.)*"'               # string literal
     token ID: r'[a-zA-Z]([a-zA-Z0-9$_@])*'          # name/identifier
     token TYPE: r'[a-zA-Z_]'                        # typenames (letters & underscore only)
-    token INDENT: r'([ ]{4})*'                      # indent (4 spaces)
-    token END_BLOCK: r'([ ]{4})*end'
     ignore: r' '                                    # ignore rogue spaces
     ignore: r'[~](.)*'                              # ignore comments
 
     rule super:                        {{ global header }}
                                        {{ header = '' }}
+                                       {{ global indents }}
+                                       {{ indents = 0 }}
                                        {{ code = '' }}
                 ( statement ender      {{ code += statement }}
                 )*
@@ -136,14 +136,25 @@ parser Prodo:
                     | ''                            {{ return [] }} # empty parameter list
 
 
-    rule compound_statement : NEWLINE                      {{ S = NEWLINE }}
-                              (INDENT statement NEWLINE    {{ S += INDENT + statement + NEWLINE }}
-                              )*
-                              END_BLOCK                    {{ return S + "\n" }}
+    rule compound_statement : NEWLINE                  {{ S = "\n" }}
+                                                       {{ global indents }}
+                                                       {{ indents += 1 }}
+                                                       #{{ print ("in :- ", indents, "C") }}
+                              (statement NEWLINE       {{ S += "\t"*indents + statement }}
+                              )+
+                              'end'                    {{ indents -= 1 }}
+                                                       #{{ print ("ou :- ", indents, "C") }}
+                                                       {{ return S }}
 
-    rule p_compound_statement : NEWLINE                      {{ S = NEWLINE }}
-                                (INDENT statement NEWLINE    {{ S += INDENT + statement + NEWLINE  }}
-                                )*                           {{ return S + "\n" }}
+    rule p_compound_statement : NEWLINE               {{ S = "\n" }}
+                                                      {{ global indents }}
+                                                      {{ indents += 1 }}
+                                                      #{{ print ("in :- ", indents, "P") }}
+                                (statement NEWLINE    {{ S += "\t"*indents + statement  }}
+                                )+
+                                                      {{ indents -= 1 }}
+                                                      #{{ print ("ou :- ", indents, "P") }}
+                                                      {{ return S }}
 
 
     rule jump_statement : 'conclude'           {{ S = "return " }}
@@ -163,15 +174,17 @@ parser Prodo:
                                 (elseif_statement      {{ S += elseif_statement }}
                                 )*
                                 (else_statement        {{ S += else_statement }}
-                                | END_BLOCK            {{ S += "\n" }}
+                                | 'end'            {{ S += "\n" }}
                                 )
                                                               {{ return S }}
 
-    rule elseif_statement : 'elseif''\\|'boolean_exp'\\|'    {{ S = "elif " + boolean_exp + ":" }}
+    rule elseif_statement :                                 {{ global indents }}
+                           'elseif''\\|'boolean_exp'\\|'    {{ S = "\t"*indents + "elif " + boolean_exp + ":" }}
                            p_compound_statement             {{ S += p_compound_statement }}
                                                             {{ return S }}
 
-    rule else_statement : 'else'                            {{ S = "else:" }}
+    rule else_statement :                                   {{ global indents }}
+                          'else'                            {{ S = "\t"*indents + "else:" }}
                           compound_statement                {{ S += compound_statement }}
                                                             {{ return S }}
 

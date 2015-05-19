@@ -33,6 +33,7 @@ class ProdoScanner(runtime.Scanner):
         ("'stop'", re.compile('stop')),
         ("'next'", re.compile('next')),
         ("'conclude'", re.compile('conclude')),
+        ("'end'", re.compile('end')),
         ('"fcn"', re.compile('fcn')),
         ("'-'", re.compile('-')),
         ('"\\\\]"', re.compile('\\]')),
@@ -75,8 +76,6 @@ class ProdoScanner(runtime.Scanner):
         ('STRING', re.compile('"([^\\\\"]+|\\\\.)*"')),
         ('ID', re.compile('[a-zA-Z]([a-zA-Z0-9$_@])*')),
         ('TYPE', re.compile('[a-zA-Z_]')),
-        ('INDENT', re.compile('([ ]{4})*')),
-        ('END_BLOCK', re.compile('([ ]{4})*end')),
         (' ', re.compile(' ')),
         ('[~](.)*', re.compile('[~](.)*')),
     ]
@@ -89,6 +88,8 @@ class Prodo(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'super', [])
         global header
         header = ''
+        global indents
+        indents = 0
         code = ''
         while self._peek('END', "r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID', context=_context) != 'END':
             statement = self.statement(_context)
@@ -400,25 +401,31 @@ class Prodo(runtime.Parser):
     def compound_statement(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'compound_statement', [])
         NEWLINE = self._scan('NEWLINE', context=_context)
-        S = NEWLINE
-        while self._peek('END_BLOCK', 'INDENT', context=_context) == 'INDENT':
-            INDENT = self._scan('INDENT', context=_context)
+        S = "\n"
+        global indents
+        indents += 1
+        while 1:
             statement = self.statement(_context)
             NEWLINE = self._scan('NEWLINE', context=_context)
-            S += INDENT + statement + NEWLINE
-        END_BLOCK = self._scan('END_BLOCK', context=_context)
-        return S + "\n"
+            S += "\t"*indents + statement
+            if self._peek("r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID', "'end'", context=_context) not in ["r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID']: break
+        self._scan("'end'", context=_context)
+        indents -= 1
+        return S
 
     def p_compound_statement(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'p_compound_statement', [])
         NEWLINE = self._scan('NEWLINE', context=_context)
-        S = NEWLINE
-        while self._peek('INDENT', "'while'", 'END_BLOCK', "'elseif'", "'else'", context=_context) == 'INDENT':
-            INDENT = self._scan('INDENT', context=_context)
+        S = "\n"
+        global indents
+        indents += 1
+        while 1:
             statement = self.statement(_context)
             NEWLINE = self._scan('NEWLINE', context=_context)
-            S += INDENT + statement + NEWLINE
-        return S + "\n"
+            S += "\t"*indents + statement
+            if self._peek("r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID', "'end'", "'elseif'", "'else'", context=_context) not in ["r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID']: break
+        indents -= 1
+        return S
 
     def jump_statement(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'jump_statement', [])
@@ -458,33 +465,35 @@ class Prodo(runtime.Parser):
         S = "if "+boolean_exp+":"
         p_compound_statement = self.p_compound_statement(_context)
         S += p_compound_statement
-        while self._peek('END_BLOCK', "'else'", "'elseif'", context=_context) == "'elseif'":
+        while self._peek("'end'", "'else'", "'elseif'", context=_context) == "'elseif'":
             elseif_statement = self.elseif_statement(_context)
             S += elseif_statement
-        _token = self._peek('END_BLOCK', "'else'", context=_context)
+        _token = self._peek("'end'", "'else'", context=_context)
         if _token == "'else'":
             else_statement = self.else_statement(_context)
             S += else_statement
-        else: # == 'END_BLOCK'
-            END_BLOCK = self._scan('END_BLOCK', context=_context)
+        else: # == "'end'"
+            self._scan("'end'", context=_context)
             S += "\n"
         return S
 
     def elseif_statement(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'elseif_statement', [])
+        global indents
         self._scan("'elseif'", context=_context)
         self._scan("'\\\\|'", context=_context)
         boolean_exp = self.boolean_exp(_context)
         self._scan("'\\\\|'", context=_context)
-        S = "elif " + boolean_exp + ":"
+        S = "\t"*indents + "elif " + boolean_exp + ":"
         p_compound_statement = self.p_compound_statement(_context)
         S += p_compound_statement
         return S
 
     def else_statement(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'else_statement', [])
+        global indents
         self._scan("'else'", context=_context)
-        S = "else:"
+        S = "\t"*indents + "else:"
         compound_statement = self.compound_statement(_context)
         S += compound_statement
         return S
