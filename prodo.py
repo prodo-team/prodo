@@ -16,6 +16,15 @@ def assign(l, r): # assign r to l, returns r if type is correct
 	else:
 		fatal_err("Cannot assign " + type(l) + " to " + type(r) + ".")
 
+def check_args(types, args, name):
+	if len(types) != len(args):
+		fatal_err("Subprogram " + name + "(..) expects " + str(len(types)) + " arguments but got " + str(len(args)))
+	else:
+		for i in range(0, len(types)):
+			if types[i] != type(args[i]):
+				fatal_err("Argument # " + str(i+1) + " in subprogram " + name + "(..) is " + str(type(args[i])) + " but " + str(types[i]) + " was expected.")
+
+
 def logical_and(x, y):
 	if (type(x) != type(True) or type(y) != type(True)):
 		fatal_err("Cannot logically and non-boolean expressions. Cast to bool first.")
@@ -34,17 +43,18 @@ def logical_xor(x, y):
 	else:
 		return (x != y)
 
-def write(x): # print string value to screen
-	if type(x) != type(""):
-		fatal_err("Cannot write non-string value without explicit cast.")
-	else:
-		sys.stdout.write(x)
+def write(args): # print string value to screen
+	check_args([str], args, "write")
+	[x] = args
+	sys.stdout.write(x)
 
-def nl(): # print a new line
+def nl(args): # print a new line
+	check_args([], args, "nl")
 	sys.stdout.write("\n")
 
-def read(): # read from default system input stream (using Python)
-	return input("")
+def read(args): # read from default system input stream (using Python)
+	check_args([], args, "read")
+	return str(input(""))
 
 def loop_range(a, b, c = 1):
 	if int(c) == 0:
@@ -52,8 +62,7 @@ def loop_range(a, b, c = 1):
 	else:
 		return range(a, b, c)
 
-def length(x):
-	if type(x) != type([]):
-		fatal_err("Cannot find length of non-array value")
-	else:
-		return len(x)
+def length(args):
+	check_args([list], args, "length")
+	[x] = args
+	return len(x)

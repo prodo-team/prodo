@@ -92,9 +92,9 @@ class Prodo(runtime.Parser):
         indents = 0
         code = ''
         while self._peek('END', "r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID', context=_context) != 'END':
-            statement = self.statement(_context)
+            statement_upper = self.statement_upper(_context)
             ender = self.ender(_context)
-            code += statement
+            code += statement_upper
         END = self._scan('END', context=_context)
         return header + code
 
@@ -137,8 +137,8 @@ class Prodo(runtime.Parser):
             TYPE = self._scan('TYPE', context=_context)
             return TYPE
 
-    def statement(self, _parent=None):
-        _context = self.Context(_parent, self._scanner, 'statement', [])
+    def statement_upper(self, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'statement_upper', [])
         _token = self._peek("r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID', context=_context)
         if _token not in ["r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'"]:
             exp_statement = self.exp_statement(_context)
@@ -146,6 +146,25 @@ class Prodo(runtime.Parser):
         elif _token == '"fcn"':
             fcn_definition = self.fcn_definition(_context)
             return fcn_definition
+        elif _token not in ["r'[~](.)*'", "'if'", "'for'", "'while'", "'loop'"]:
+            jump_statement = self.jump_statement(_context)
+            return jump_statement
+        elif _token == "'if'":
+            conditional_statement = self.conditional_statement(_context)
+            return conditional_statement
+        elif _token != "r'[~](.)*'":
+            iterative_statement = self.iterative_statement(_context)
+            return iterative_statement
+        else: # == "r'[~](.)*'"
+            self._scan("r'[~](.)*'", context=_context)
+            return "\n"
+
+    def statement(self, _parent=None):
+        _context = self.Context(_parent, self._scanner, 'statement', [])
+        _token = self._peek("r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID', context=_context)
+        if _token not in ["r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'"]:
+            exp_statement = self.exp_statement(_context)
+            return exp_statement
         elif _token not in ["r'[~](.)*'", "'if'", "'for'", "'while'", "'loop'"]:
             jump_statement = self.jump_statement(_context)
             return jump_statement
@@ -186,7 +205,7 @@ class Prodo(runtime.Parser):
             self._scan('"\\\\("', context=_context)
             list_plain = self.list_plain(_context)
             self._scan('"\\\\)"', context=_context)
-            return identifier + "("+list_plain+")\n"
+            return identifier + "(["+list_plain+"])\n"
         elif _token == 'r"[+][+]"':
             self._scan('r"[+][+]"', context=_context)
             return identifier + "+=1\n"
@@ -340,7 +359,7 @@ class Prodo(runtime.Parser):
                 self._scan('"\\\\("', context=_context)
                 list_plain = self.list_plain(_context)
                 self._scan('"\\\\)"', context=_context)
-                return A + "("+list_plain+")"
+                return A + "(["+list_plain+"])"
             elif _token == '"\\\\["':
                 self._scan('"\\\\["', context=_context)
                 additive_exp = self.additive_exp(_context)
@@ -372,13 +391,15 @@ class Prodo(runtime.Parser):
         self._scan('"\\\\("', context=_context)
         param_list = self.param_list(_context)
         self._scan('"\\\\)"', context=_context)
-        P1 = ""
-        for x in param_list: P1+=x[1]
-        S = "\ndef " + fcn_name + "(" + P1 + "):"
+        P1, P2 = "", ""
+        for x in param_list: P1+=x[0]; P2 += x[1]
+        S = "\ndef " + fcn_name + "(args):"
+        S += "\n\tcheck_args(["+P1+"], args, \""+fcn_name+"\")"
+        S += "\n\t[" + P2 + "]=args"
         compound_statement = self.compound_statement(_context)
         S += compound_statement
         global header
-        header += S + "\n"
+        header += S
         return ""
 
     def param_list(self, _parent=None):
@@ -408,7 +429,7 @@ class Prodo(runtime.Parser):
             statement = self.statement(_context)
             NEWLINE = self._scan('NEWLINE', context=_context)
             S += "\t"*indents + statement
-            if self._peek("r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID', "'end'", context=_context) not in ["r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID']: break
+            if self._peek("r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID', "'end'", context=_context) not in ["r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID']: break
         self._scan("'end'", context=_context)
         indents -= 1
         return S
@@ -423,7 +444,7 @@ class Prodo(runtime.Parser):
             statement = self.statement(_context)
             NEWLINE = self._scan('NEWLINE', context=_context)
             S += "\t"*indents + statement
-            if self._peek("r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID', "'end'", "'elseif'", "'else'", context=_context) not in ["r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID']: break
+            if self._peek("r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID', "'end'", "'elseif'", "'else'", context=_context) not in ["r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID']: break
         indents -= 1
         return S
 

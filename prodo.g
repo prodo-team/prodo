@@ -14,12 +14,12 @@ parser Prodo:
     ignore: r' '                                    # ignore rogue spaces
     ignore: r'[~](.)*'                              # ignore comments
 
-    rule super:                        {{ global header }}
-                                       {{ header = '' }}
-                                       {{ global indents }}
-                                       {{ indents = 0 }}
-                                       {{ code = '' }}
-                ( statement ender      {{ code += statement }}
+    rule super:                              {{ global header }}
+                                             {{ header = '' }}
+                                             {{ global indents }}
+                                             {{ indents = 0 }}
+                                             {{ code = '' }}
+                ( statement_upper ender      {{ code += statement_upper }}
                 )*
                 END                    {{ return header + code }}
 
@@ -35,8 +35,14 @@ parser Prodo:
                   | 'enum'                  {{ return 'enum ' }}
                   | TYPE                    {{ return TYPE }}
 
+    rule statement_upper: exp_statement         {{ return exp_statement }}
+                       | fcn_definition         {{ return fcn_definition }}
+                       | jump_statement         {{ return jump_statement }}
+                       | conditional_statement  {{ return conditional_statement }}
+                       | iterative_statement    {{ return iterative_statement }}
+                       | r'[~](.)*'             {{ return "\n" }}
+
     rule statement : exp_statement          {{ return exp_statement }}
-                   | fcn_definition         {{ return fcn_definition }}
                    | jump_statement         {{ return jump_statement }}
                    | conditional_statement  {{ return conditional_statement }}
                    | iterative_statement    {{ return iterative_statement }}
@@ -53,7 +59,7 @@ parser Prodo:
                                                       {{ return A + "\n" }}
                             )
                           |
-                          ("\\(" list_plain "\\)")      {{ return identifier + "("+list_plain+")\n" }}
+                          ("\\(" list_plain "\\)")      {{ return identifier + "(["+list_plain+"])\n" }}
                           | r"[+][+]"                   {{ return identifier + "+=1\n" }}
                           | "--"                        {{ return identifier + "--\n" }}
                           )
@@ -110,7 +116,7 @@ parser Prodo:
                        | 'nil'            {{ return 'None' }}
                        | STRING           {{ return STRING }}
                        | ( identifier     {{ A = identifier }}
-                           ( "\\(" list_plain "\\)"     {{ return A + "("+list_plain+")" }}
+                           ( "\\(" list_plain "\\)"     {{ return A + "(["+list_plain+"])" }}
                            | "\\[" additive_exp "\\]"   {{ return A + "["+additive_exp+"]" }}
                            | ''                         {{ return A }}
                            )
@@ -120,12 +126,15 @@ parser Prodo:
                        | '-'"\\("additive_exp"\\)" {{ return '-('+additive_exp+')' }}
 
     rule fcn_definition : "fcn" type_name fcn_name "\\(" param_list "\\)"
-                                             {{ P1 = "" }}
-                                             {{ for x in param_list: P1+=x[1] }}
-                                             {{ S = "\ndef " + fcn_name + "(" + P1 + "):" }}
+                                             {{ P1, P2 = "", "" }}
+                                             {{ for x in param_list: P1+=x[0]; P2 += x[1] }}
+                                             {{ S = "\ndef " + fcn_name + "(args):" }}
+                                            # note that function definitions can't be nested, so a toplevel indentation of 1 tab is always guaranteed inside functions
+                                             {{ S += "\n\tcheck_args(["+P1+"], args, \""+fcn_name+"\")" }} # check argument types
+                                             {{ S += "\n\t[" + P2 + "]=args" }}
                           compound_statement {{ S += compound_statement }}
                                              {{ global header }}
-                                             {{ header += S + "\n" }}
+                                             {{ header += S }}
                                              {{ return "" }}
 
 
