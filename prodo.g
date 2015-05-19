@@ -127,7 +127,7 @@ parser Prodo:
 
     rule fcn_definition : "fcn" type_name fcn_name "\\(" param_list "\\)"
                                              {{ P1, P2 = "", "" }}
-                                             {{ for x in param_list: P1+=x[0]; P2 += x[1] }}
+                                             {{ for x in param_list: P1+=x[0] + ","; P2 += x[1] + "," }}
                                              {{ S = "\ndef " + fcn_name + "(args):" }}
                                             # note that function definitions can't be nested, so a toplevel indentation of 1 tab is always guaranteed inside functions
                                              {{ S += "\n\tcheck_args(["+P1+"], args, \""+fcn_name+"\")" }} # check argument types

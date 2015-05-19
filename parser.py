@@ -25,5 +25,5 @@ fou.write(code)
 try:
     e = compile(code, '<string>', 'exec')
     exec(e)
-except NameError:
+except TypeError:
     fatal_err("Cannot use undeclared identifier.")

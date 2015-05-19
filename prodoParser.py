@@ -392,7 +392,7 @@ class Prodo(runtime.Parser):
         param_list = self.param_list(_context)
         self._scan('"\\\\)"', context=_context)
         P1, P2 = "", ""
-        for x in param_list: P1+=x[0]; P2 += x[1]
+        for x in param_list: P1+=x[0] + ","; P2 += x[1] + ","
         S = "\ndef " + fcn_name + "(args):"
         S += "\n\tcheck_args(["+P1+"], args, \""+fcn_name+"\")"
         S += "\n\t[" + P2 + "]=args"
