@@ -1,9 +1,11 @@
 ## Prodo Python Module
 
 import sys
+import inspect
 
 def fatal_err(msg): # stop execution and raise a fatal error at runtime
-	msg = ":=  Oh No! Error:  " + msg
+	l = str(inspect.getframeinfo()[1])
+	msg = ":=  Oh No! Error at Line "+l+":  " + msg
 	bL = len(msg)
 	print "-" * bL
 	print msg
@@ -49,18 +51,18 @@ def loop_range(a, b, c = 1):
 	else:
 		return range(a, b, c)
 
-def write(x): # print string value to screen
+def write_args_1(x): # print string value to screen
 	check_args([str], [x], "write")
 	sys.stdout.write(x)
 
-def nl(): # print a new line
+def nl_args_0(): # print a new line
 	check_args([], [], "nl")
 	sys.stdout.write("\n")
 
-def read(): # read from default system input stream (using Python)
+def read_args_0(): # read from default system input stream (using Python)
 	check_args([], [], "read")
 	return str(input(""))
 
-def length(x):
+def length_args_1(x):
 	check_args([list], [x], "length")
 	return len(x)

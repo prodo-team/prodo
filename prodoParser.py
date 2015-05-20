@@ -87,9 +87,11 @@ class Prodo(runtime.Parser):
     def super(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'super', [])
         global header
-        header = ''
         global indents
+        global listCount
+        header = ''
         indents = 0
+        listCount = 0
         code = ''
         while self._peek('END', "r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID', context=_context) != 'END':
             statement_upper = self.statement_upper(_context)
@@ -205,7 +207,8 @@ class Prodo(runtime.Parser):
             self._scan('"\\\\("', context=_context)
             list_plain = self.list_plain(_context)
             self._scan('"\\\\)"', context=_context)
-            return identifier + "("+list_plain+")\n"
+            global listCount
+            return identifier + "_args_" + str(listCount) + "("+list_plain+")\n"
         elif _token == 'r"[+][+]"':
             self._scan('r"[+][+]"', context=_context)
             return identifier + "+=1\n"
@@ -262,14 +265,16 @@ class Prodo(runtime.Parser):
 
     def list_plain(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'list_plain', [])
+        global listCount
+        listCount = 0
         _token = self._peek("''", 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', '"\\\\["', "'-'", context=_context)
         if _token != "''":
             additive_exp = self.additive_exp(_context)
-            S = additive_exp
+            S = additive_exp; listCount += 1
             while self._peek('","', '"\\\\)"', "'\\\\}'", context=_context) == '","':
                 self._scan('","', context=_context)
                 additive_exp = self.additive_exp(_context)
-                S += "," + additive_exp
+                S += "," + additive_exp; listCount += 1
             return S
         else: # == "''"
             self._scan("''", context=_context)
@@ -359,7 +364,8 @@ class Prodo(runtime.Parser):
                 self._scan('"\\\\("', context=_context)
                 list_plain = self.list_plain(_context)
                 self._scan('"\\\\)"', context=_context)
-                return A + "("+list_plain+")"
+                global listCount
+                return A + "_args_" + str(listCount) + "("+list_plain+")"
             elif _token == '"\\\\["':
                 self._scan('"\\\\["', context=_context)
                 additive_exp = self.additive_exp(_context)
@@ -391,9 +397,9 @@ class Prodo(runtime.Parser):
         self._scan('"\\\\("', context=_context)
         param_list = self.param_list(_context)
         self._scan('"\\\\)"', context=_context)
-        P1, P2 = "", ""
-        for x in param_list: P1+=x[0] + ","; P2 += x[1] + ","
-        S = "\ndef " + fcn_name + "("+P2+"):"
+        P1, P2, P3 = "", "", ""
+        for x in param_list: P1+=x[0] + ","; P2 += x[1] + ",";
+        S = "\ndef " + fcn_name + "_args_" + str(P2.count(",")) + "("+P2+"):"
         S += "\n\tcheck_args(["+P1+"], ["+P2+"], \""+fcn_name+"\")"
         compound_statement = self.compound_statement(_context)
         S += compound_statement
