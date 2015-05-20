@@ -43,26 +43,24 @@ def logical_xor(x, y):
 	else:
 		return (x != y)
 
-def write(args): # print string value to screen
-	check_args([str], args, "write")
-	[x] = args
-	sys.stdout.write(x)
-
-def nl(args): # print a new line
-	check_args([], args, "nl")
-	sys.stdout.write("\n")
-
-def read(args): # read from default system input stream (using Python)
-	check_args([], args, "read")
-	return str(input(""))
-
 def loop_range(a, b, c = 1):
 	if int(c) == 0:
 		fatal_err("For loop incrementer must not be zero.")
 	else:
 		return range(a, b, c)
 
-def length(args):
-	check_args([list], args, "length")
-	[x] = args
+def write(x): # print string value to screen
+	check_args([str], [x], "write")
+	sys.stdout.write(x)
+
+def nl(): # print a new line
+	check_args([], [], "nl")
+	sys.stdout.write("\n")
+
+def read(): # read from default system input stream (using Python)
+	check_args([], [], "read")
+	return str(input(""))
+
+def length(x):
+	check_args([list], [x], "length")
 	return len(x)

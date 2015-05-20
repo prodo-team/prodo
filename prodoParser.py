@@ -205,7 +205,7 @@ class Prodo(runtime.Parser):
             self._scan('"\\\\("', context=_context)
             list_plain = self.list_plain(_context)
             self._scan('"\\\\)"', context=_context)
-            return identifier + "(["+list_plain+"])\n"
+            return identifier + "("+list_plain+")\n"
         elif _token == 'r"[+][+]"':
             self._scan('r"[+][+]"', context=_context)
             return identifier + "+=1\n"
@@ -359,7 +359,7 @@ class Prodo(runtime.Parser):
                 self._scan('"\\\\("', context=_context)
                 list_plain = self.list_plain(_context)
                 self._scan('"\\\\)"', context=_context)
-                return A + "(["+list_plain+"])"
+                return A + "("+list_plain+")"
             elif _token == '"\\\\["':
                 self._scan('"\\\\["', context=_context)
                 additive_exp = self.additive_exp(_context)
@@ -393,9 +393,8 @@ class Prodo(runtime.Parser):
         self._scan('"\\\\)"', context=_context)
         P1, P2 = "", ""
         for x in param_list: P1+=x[0] + ","; P2 += x[1] + ","
-        S = "\ndef " + fcn_name + "(args):"
-        S += "\n\tcheck_args(["+P1+"], args, \""+fcn_name+"\")"
-        S += "\n\t[" + P2 + "]=args"
+        S = "\ndef " + fcn_name + "("+P2+"):"
+        S += "\n\tcheck_args(["+P1+"], ["+P2+"], \""+fcn_name+"\")"
         compound_statement = self.compound_statement(_context)
         S += compound_statement
         global header

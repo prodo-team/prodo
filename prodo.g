@@ -59,7 +59,7 @@ parser Prodo:
                                                       {{ return A + "\n" }}
                             )
                           |
-                          ("\\(" list_plain "\\)")      {{ return identifier + "(["+list_plain+"])\n" }}
+                          ("\\(" list_plain "\\)")      {{ return identifier + "("+list_plain+")\n" }}
                           | r"[+][+]"                   {{ return identifier + "+=1\n" }}
                           | "--"                        {{ return identifier + "--\n" }}
                           )
@@ -116,7 +116,7 @@ parser Prodo:
                        | 'nil'            {{ return 'None' }}
                        | STRING           {{ return STRING }}
                        | ( identifier     {{ A = identifier }}
-                           ( "\\(" list_plain "\\)"     {{ return A + "(["+list_plain+"])" }}
+                           ( "\\(" list_plain "\\)"     {{ return A + "("+list_plain+")" }}
                            | "\\[" additive_exp "\\]"   {{ return A + "["+additive_exp+"]" }}
                            | ''                         {{ return A }}
                            )
@@ -128,10 +128,9 @@ parser Prodo:
     rule fcn_definition : "fcn" type_name fcn_name "\\(" param_list "\\)"
                                              {{ P1, P2 = "", "" }}
                                              {{ for x in param_list: P1+=x[0] + ","; P2 += x[1] + "," }}
-                                             {{ S = "\ndef " + fcn_name + "(args):" }}
+                                             {{ S = "\ndef " + fcn_name + "("+P2+"):" }}
                                             # note that function definitions can't be nested, so a toplevel indentation of 1 tab is always guaranteed inside functions
-                                             {{ S += "\n\tcheck_args(["+P1+"], args, \""+fcn_name+"\")" }} # check argument types
-                                             {{ S += "\n\t[" + P2 + "]=args" }}
+                                             {{ S += "\n\tcheck_args(["+P1+"], ["+P2+"], \""+fcn_name+"\")" }} # check argument types
                           compound_statement {{ S += compound_statement }}
                                              {{ global header }}
                                              {{ header += S }}
