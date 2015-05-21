@@ -33,20 +33,20 @@ parser Prodo:
                   | 'real'                  {{ return 'float' }}
                   | 'str'                   {{ return 'str' }}
                   | 'array'                 {{ return 'list' }}
-                  | 'structure'             {{ return 'dict' }}
-                  | 'enum'                  {{ return 'enum ' }}
                   | TYPE                    {{ return TYPE }}
 
     rule statement_upper: exp_statement         {{ return exp_statement }}
                        | fcn_definition         {{ return fcn_definition }}
                        | conditional_statement  {{ return conditional_statement }}
                        | iterative_statement    {{ return iterative_statement }}
+                       | structure_declaration  {{ return structure_declaration }}
                        | r'[~](.)*'             {{ return "\n" }}
 
     rule statement : exp_statement          {{ return exp_statement }}
                    | jump_statement         {{ return jump_statement }}
                    | conditional_statement  {{ return conditional_statement }}
                    | iterative_statement    {{ return iterative_statement }}
+                   | structure_declaration  {{ return structure_declaration }}
                    | r'[~](.)*'             {{ return "\n" }}
 
     rule exp_statement : declaration_exp              {{ return declaration_exp }} # don't add semicolon
@@ -72,9 +72,17 @@ parser Prodo:
                                                       {{ A += "=" + type_name + "("+additive_exp+")" }}
                                                       {{ return A + "\n" }}
 
+    rule structure_declaration : 'structure' list_identifiers   {{ A = list_identifiers }}
+                                                                {{ A += " = dict(" }}
+                                 struct_compound_stat           {{ A += struct_compound_stat.replace("\n",",") + ")\n" }}
+                                                                {{ return A }}
+
     rule identifier : ID                            {{ ID = ID.replace("$", "_dol_") }}
                                                     {{ ID = ID.replace("@", "_at_") }}
-                                                    {{ return ID }}
+                      ( "\\." identifier              {{ ID += "['"+identifier+"']" }}
+                      | "\\[" additive_exp "\\]"      {{ ID += "["+additive_exp+"]" }}
+                      | ''
+                      )                             {{ return ID }}
 
     rule assignment_op : ":="                       {{ return "" }}
                        | r"[*]="                    {{ return "*" }}
@@ -122,13 +130,12 @@ parser Prodo:
                        | ( identifier     {{ A = identifier }}
                            ( "\\(" list_plain "\\)"     {{ global listCount }}
                            {{ return A + "_args_" + str(listCount) + "("+list_plain+")" }}
-                           | "\\[" additive_exp "\\]"   {{ return A + "["+additive_exp+"]" }}
                            | ''                         {{ return A }}
                            )
                          )
                        | cast_exp         {{ return cast_exp }}
                        | "\\[" additive_exp "\\]" {{ return '(' + additive_exp + ')' }}
-                       | '-'"\\("additive_exp"\\)" {{ return '-('+additive_exp+')' }}
+                       | '-'additive_exp          {{ return '-('+additive_exp+')' }}
 
     rule fcn_definition : "fcn" type_name fcn_name "\\(" param_list "\\)"
                                              {{ P1, P2, P3 = "", "", "" }}
@@ -170,6 +177,11 @@ parser Prodo:
                                                       {{ indents -= 1 }}
                                                       #{{ print ("ou :- ", indents, "P") }}
                                                       {{ return S }}
+
+    rule struct_compound_stat : NEWLINE            {{ S = "" }}
+                          (declaration_exp NEWLINE {{ S += declaration_exp }}
+                          )+
+                          'end'                    {{ return S }}
 
 
     rule jump_statement : 'conclude'           {{ S = "return check_return_value(conclude, _fcn, " }}

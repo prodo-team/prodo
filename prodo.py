@@ -15,7 +15,7 @@ def assign(l, r): # assign r to l, returns r if type is correct
 	if (type(r) == type(l)):
 		return r
 	else:
-		fatal_err("Cannot assign " + type(l) + " to " + type(r) + ".")
+		fatal_err("Cannot assign " + str(type(l)) + " to " + str(type(r)) + ".")
 
 def check_args(types, args, name):
 	if len(types) != len(args):
@@ -67,8 +67,13 @@ def nl_args_0(): # print a new line
 
 def read_args_0(): # read from default system input stream (using Python)
 	check_args([], [], "read")
-	return raw_input("")
+	return raw_input("") # returns a string
 
-def length_args_1(x):
+def length_args_1(x): # get the length of an array
 	check_args([list], [x], "length")
 	return len(x)
+
+def affix_args_2(array, element): # affix element to the end of array
+	check_args([list], [array], "affix")
+	new_array = array + [element]
+	return new_array
