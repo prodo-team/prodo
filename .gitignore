@@ -1,7 +1,7 @@
 # ignore yapps directory
 /yapps
 /yapps/*
-/output.py
+/prodo_output.py
 /prodo.cpp.g
 /prodo.h
 /*.pyc

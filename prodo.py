@@ -67,7 +67,7 @@ def nl_args_0(): # print a new line
 
 def read_args_0(): # read from default system input stream (using Python)
 	check_args([], [], "read")
-	return str(input(""))
+	return raw_input("")
 
 def length_args_1(x):
 	check_args([list], [x], "length")
