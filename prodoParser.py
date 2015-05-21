@@ -286,14 +286,16 @@ class Prodo(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'list_plain', [])
         global listCount
         listCount = 0
+        my_listCount = 0
         _token = self._peek("''", 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', '"\\\\["', "'-'", context=_context)
         if _token != "''":
             additive_exp = self.additive_exp(_context)
-            S = additive_exp; listCount += 1
+            S = additive_exp; my_listCount += 1
             while self._peek('","', '"\\\\)"', "'\\\\}'", context=_context) == '","':
                 self._scan('","', context=_context)
                 additive_exp = self.additive_exp(_context)
-                S += "," + additive_exp; listCount += 1
+                S += "," + additive_exp; my_listCount += 1
+            listCount = my_listCount
             return S
         else: # == "''"
             self._scan("''", context=_context)

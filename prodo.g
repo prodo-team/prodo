@@ -95,9 +95,11 @@ parser Prodo:
 
     rule list_plain :                       {{ global listCount }}
                                             {{ listCount = 0 }}
-                      (additive_exp         {{ S = additive_exp; listCount += 1 }}
-                      ( "," additive_exp    {{ S += "," + additive_exp; listCount += 1 }}
+                                            {{ my_listCount = 0 }}
+                      (additive_exp         {{ S = additive_exp; my_listCount += 1 }}
+                      ( "," additive_exp    {{ S += "," + additive_exp; my_listCount += 1 }}
                       )*
+                                            {{ listCount = my_listCount }}
                                             {{ return S }}
                       | ''                  {{ return '' }} # empty list
                       )
