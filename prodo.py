@@ -1,12 +1,11 @@
 ## Prodo Python Module
 
 import sys
-import inspect
 
 def fatal_err(msg): # stop execution and raise a fatal error at runtime
-	l = str(inspect.getframeinfo()[1])
-	msg = ":=  Oh No! Error at Line "+l+":  " + msg
+	msg = ":=  Oh No! Error:  " + msg
 	bL = len(msg)
+	print "\n"
 	print "-" * bL
 	print msg
 	print "-" * bL
@@ -26,6 +25,11 @@ def check_args(types, args, name):
 			if types[i] != type(args[i]):
 				fatal_err("Argument # " + str(i+1) + " in subprogram " + name + "(..) is " + str(type(args[i])) + " but " + str(types[i]) + " was expected.")
 
+def check_return_value(rt, fcn, val):
+	if rt != type(val):
+		fatal_err("Return value of subprogram " + fcn + "(..) is " + str(type(val)) + " but must be " + str(rt))
+	else:
+		return val
 
 def logical_and(x, y):
 	if (type(x) != type(True) or type(y) != type(True)):
@@ -50,6 +54,8 @@ def loop_range(a, b, c = 1):
 		fatal_err("For loop incrementer must not be zero.")
 	else:
 		return range(a, b, c)
+
+# The following are publicly accessible functions
 
 def write_args_1(x): # print string value to screen
 	check_args([str], [x], "write")

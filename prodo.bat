@@ -1,2 +1,2 @@
 python makeParser.py
-python parser.py
+python parser.py %1

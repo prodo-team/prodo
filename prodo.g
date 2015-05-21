@@ -10,7 +10,7 @@ parser Prodo:
     token REAL: r'[0-9]+[.][0-9]+|[-][0-9]+[.][0-9]+' # float literal
     token STRING: r'"([^\\"]+|\\.)*"'               # string literal
     token ID: r'[a-zA-Z]([a-zA-Z0-9$_@])*'          # name/identifier
-    token TYPE: r'[a-zA-Z_]'                        # typenames (letters & underscore only)
+    token TYPE: r'[a-zA-Z]'                         # typenames (letters & underscore only)
     ignore: r' '                                    # ignore rogue spaces
     ignore: r'[~](.)*'                              # ignore comments
 
@@ -27,7 +27,7 @@ parser Prodo:
 
     rule ender: NEWLINE | ''
 
-    rule type_name: 'void'                  {{ return 'void' }}
+    rule type_name: 'void'                  {{ return 'type(None)' }}
                   | 'bool'                  {{ return 'bool' }}
                   | 'int'                   {{ return 'int' }}
                   | 'real'                  {{ return 'float' }}
@@ -39,7 +39,6 @@ parser Prodo:
 
     rule statement_upper: exp_statement         {{ return exp_statement }}
                        | fcn_definition         {{ return fcn_definition }}
-                       | jump_statement         {{ return jump_statement }}
                        | conditional_statement  {{ return conditional_statement }}
                        | iterative_statement    {{ return iterative_statement }}
                        | r'[~](.)*'             {{ return "\n" }}
@@ -137,6 +136,8 @@ parser Prodo:
                                              {{ S = "\ndef " + fcn_name + "_args_" + str(P2.count(",")) + "("+P2+"):" }}
                                             # note that function definitions can't be nested, so a toplevel indentation of 1 tab is always guaranteed inside functions
                                              {{ S += "\n\tcheck_args(["+P1+"], ["+P2+"], \""+fcn_name+"\")" }} # check argument types
+                                             {{ S += "\n\tconclude = " + type_name }} # return type
+                                             {{ S += "\n\t_fcn = \"" + fcn_name + "\"" }} # function name
                           compound_statement {{ S += compound_statement }}
                                              {{ global header }}
                                              {{ header += S }}
@@ -171,12 +172,12 @@ parser Prodo:
                                                       {{ return S }}
 
 
-    rule jump_statement : 'conclude'           {{ S = "return " }}
+    rule jump_statement : 'conclude'           {{ S = "return check_return_value(conclude, _fcn, " }}
                           ( additive_exp       {{ S += additive_exp }}
                           | boolean_literal    {{ S += boolean_literal }}
-                          | ''                 {{ S += "" }}
+                          | ''                 {{ S += "None" }}
                           )
-                                               {{ return S }}
+                                               {{ return S + ")" }}
                         | 'next'               {{ return "continue" }}
                         | 'stop'               {{ return "break" }}
 

@@ -75,7 +75,7 @@ class ProdoScanner(runtime.Scanner):
         ('REAL', re.compile('[0-9]+[.][0-9]+|[-][0-9]+[.][0-9]+')),
         ('STRING', re.compile('"([^\\\\"]+|\\\\.)*"')),
         ('ID', re.compile('[a-zA-Z]([a-zA-Z0-9$_@])*')),
-        ('TYPE', re.compile('[a-zA-Z_]')),
+        ('TYPE', re.compile('[a-zA-Z]')),
         (' ', re.compile(' ')),
         ('[~](.)*', re.compile('[~](.)*')),
     ]
@@ -93,7 +93,7 @@ class Prodo(runtime.Parser):
         indents = 0
         listCount = 0
         code = ''
-        while self._peek('END', "r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID', context=_context) != 'END':
+        while self._peek('END', "r'[~](.)*'", '"fcn"', "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID', context=_context) != 'END':
             statement_upper = self.statement_upper(_context)
             ender = self.ender(_context)
             code += statement_upper
@@ -113,7 +113,7 @@ class Prodo(runtime.Parser):
         _token = self._peek("'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', context=_context)
         if _token == "'void'":
             self._scan("'void'", context=_context)
-            return 'void'
+            return 'type(None)'
         elif _token == "'bool'":
             self._scan("'bool'", context=_context)
             return 'bool'
@@ -141,16 +141,13 @@ class Prodo(runtime.Parser):
 
     def statement_upper(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'statement_upper', [])
-        _token = self._peek("r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID', context=_context)
-        if _token not in ["r'[~](.)*'", '"fcn"', "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'"]:
+        _token = self._peek("r'[~](.)*'", '"fcn"', "'if'", "'for'", "'while'", "'loop'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', 'ID', context=_context)
+        if _token not in ["r'[~](.)*'", '"fcn"', "'if'", "'for'", "'while'", "'loop'"]:
             exp_statement = self.exp_statement(_context)
             return exp_statement
         elif _token == '"fcn"':
             fcn_definition = self.fcn_definition(_context)
             return fcn_definition
-        elif _token not in ["r'[~](.)*'", "'if'", "'for'", "'while'", "'loop'"]:
-            jump_statement = self.jump_statement(_context)
-            return jump_statement
         elif _token == "'if'":
             conditional_statement = self.conditional_statement(_context)
             return conditional_statement
@@ -401,6 +398,8 @@ class Prodo(runtime.Parser):
         for x in param_list: P1+=x[0] + ","; P2 += x[1] + ",";
         S = "\ndef " + fcn_name + "_args_" + str(P2.count(",")) + "("+P2+"):"
         S += "\n\tcheck_args(["+P1+"], ["+P2+"], \""+fcn_name+"\")"
+        S += "\n\tconclude = " + type_name
+        S += "\n\t_fcn = \"" + fcn_name + "\""
         compound_statement = self.compound_statement(_context)
         S += compound_statement
         global header
@@ -458,7 +457,7 @@ class Prodo(runtime.Parser):
         _token = self._peek("'conclude'", "'next'", "'stop'", context=_context)
         if _token == "'conclude'":
             self._scan("'conclude'", context=_context)
-            S = "return "
+            S = "return check_return_value(conclude, _fcn, "
             _token = self._peek("''", "'yes'", "'no'", "'1'", "'0'", 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'structure'", "'enum'", 'TYPE', '"\\\\["', "'-'", context=_context)
             if _token not in ["''", "'yes'", "'no'", "'1'", "'0'"]:
                 additive_exp = self.additive_exp(_context)
@@ -468,8 +467,8 @@ class Prodo(runtime.Parser):
                 S += boolean_literal
             else: # == "''"
                 self._scan("''", context=_context)
-                S += ""
-            return S
+                S += "None"
+            return S + ")"
         elif _token == "'next'":
             self._scan("'next'", context=_context)
             return "continue"

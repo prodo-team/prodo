@@ -1,9 +1,13 @@
 import prodoParser
 from prodo import *
+# note: prodo imports 'sys'
 
 DEBUG = False
 
-fin = open('testCode.prodo', 'r')
+if len(sys.argv) < 2:
+    fatal_err("Please supply a filename. ")
+
+fin = open(sys.argv[1], 'r')
 f_input = fin.read()
 
 if DEBUG:
@@ -18,9 +22,8 @@ except TypeError:
 
 if DEBUG:
     print code
-
-fou = open('output.py', 'w')
-fou.write(code)
+    fou = open('prodo_output.py', 'w')
+    fou.write(code)
 
 e = compile(code, '<string>', 'exec')
 exec(e)
