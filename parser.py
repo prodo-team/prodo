@@ -25,11 +25,8 @@ if DEBUG:
     fou = open('prodo_output.py', 'w')
     fou.write(code)
 
-e = compile(code, '<string>', 'exec')
-exec(e)
-
-#try:
-#    e = compile(code, '<string>', 'exec')
-#    exec(e)
-#except NameError:
-#    fatal_err("Cannot use undeclared identifier.")
+try:
+    e = compile(code, '<string>', 'exec')
+    exec(e)
+except NameError:
+    fatal_err("Cannot use undeclared identifier.")
