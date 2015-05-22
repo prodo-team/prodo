@@ -22,8 +22,6 @@ class ProdoScanner(runtime.Scanner):
         ("'xor'", re.compile('xor')),
         ("'or'", re.compile('or')),
         ("'and'", re.compile('and')),
-        ("'0'", re.compile('0')),
-        ("'1'", re.compile('1')),
         ("'no'", re.compile('no')),
         ("'yes'", re.compile('yes')),
         ("'else'", re.compile('else')),
@@ -93,7 +91,7 @@ class Prodo(runtime.Parser):
         indents = 0
         listCount = 0
         code = ''
-        while self._peek('END', "r'[~](.)*'", '"fcn"', "'if'", "'for'", "'while'", "'loop'", "'structure'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', 'ID', context=_context) != 'END':
+        while self._peek('END', "r'[~](.)*'", '"fcn"', "'if'", "'for'", "'while'", "'loop'", "'structure'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'ID', context=_context) != 'END':
             statement_upper = self.statement_upper(_context)
             ender = self.ender(_context)
             code += statement_upper
@@ -110,7 +108,7 @@ class Prodo(runtime.Parser):
 
     def type_name(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'type_name', [])
-        _token = self._peek("'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', context=_context)
+        _token = self._peek("'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", context=_context)
         if _token == "'void'":
             self._scan("'void'", context=_context)
             return 'type(None)'
@@ -126,16 +124,13 @@ class Prodo(runtime.Parser):
         elif _token == "'str'":
             self._scan("'str'", context=_context)
             return 'str'
-        elif _token == "'array'":
+        else: # == "'array'"
             self._scan("'array'", context=_context)
             return 'list'
-        else: # == 'TYPE'
-            TYPE = self._scan('TYPE', context=_context)
-            return TYPE
 
     def statement_upper(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'statement_upper', [])
-        _token = self._peek("r'[~](.)*'", '"fcn"', "'if'", "'for'", "'while'", "'loop'", "'structure'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', 'ID', context=_context)
+        _token = self._peek("r'[~](.)*'", '"fcn"', "'if'", "'for'", "'while'", "'loop'", "'structure'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'ID', context=_context)
         if _token not in ["r'[~](.)*'", '"fcn"', "'if'", "'for'", "'while'", "'loop'", "'structure'"]:
             exp_statement = self.exp_statement(_context)
             return exp_statement
@@ -157,7 +152,7 @@ class Prodo(runtime.Parser):
 
     def statement(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'statement', [])
-        _token = self._peek("r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'structure'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', 'ID', context=_context)
+        _token = self._peek("r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'structure'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'ID', context=_context)
         if _token not in ["r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'structure'"]:
             exp_statement = self.exp_statement(_context)
             return exp_statement
@@ -179,7 +174,7 @@ class Prodo(runtime.Parser):
 
     def exp_statement(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'exp_statement', [])
-        _token = self._peek("'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', 'ID', context=_context)
+        _token = self._peek("'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'ID', context=_context)
         if _token != 'ID':
             declaration_exp = self.declaration_exp(_context)
             return declaration_exp
@@ -237,21 +232,21 @@ class Prodo(runtime.Parser):
     def identifier(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'identifier', [])
         ID = self._scan('ID', context=_context)
-        ID = ID.replace("$", "_dol_")
-        ID = ID.replace("@", "_at_")
+        S = ID.replace("$", "_dol_")
+        S = S.replace("@", "_at_")
         _token = self._peek('"\\\\."', '"\\\\["', "''", context=_context)
         if _token == '"\\\\."':
             self._scan('"\\\\."', context=_context)
-            identifier = self.identifier(_context)
-            ID += "['"+identifier+"']"
+            ID = self._scan('ID', context=_context)
+            S += "['"+ID.replace("$", "_dol_").replace("@","_at_")+"']"
         elif _token == '"\\\\["':
             self._scan('"\\\\["', context=_context)
             additive_exp = self.additive_exp(_context)
             self._scan('"\\\\]"', context=_context)
-            ID += "["+additive_exp+"]"
+            S += "["+additive_exp+"]"
         else: # == "''"
             self._scan("''", context=_context)
-        return ID
+        return S
 
     def assignment_op(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'assignment_op', [])
@@ -287,7 +282,7 @@ class Prodo(runtime.Parser):
         global listCount
         listCount = 0
         my_listCount = 0
-        _token = self._peek("''", 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', '"\\\\["', "'-'", context=_context)
+        _token = self._peek("''", 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", '"\\\\["', "'-'", "'yes'", "'no'", context=_context)
         if _token != "''":
             additive_exp = self.additive_exp(_context)
             S = additive_exp; my_listCount += 1
@@ -315,7 +310,7 @@ class Prodo(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'additive_exp', [])
         term = self.term(_context)
         S = term
-        while self._peek("r'[+]'", '"-"', '"\\\\]"', '","', '"\\\\)"', "'to'", "'by '", "'\\\\|'", 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', '"\\\\["', "'-'", "'=='", "'!='", "'<'", "'>'", "'<='", "'>='", 'NEWLINE', "r'[*]'", '"/"', '"%"', "'and'", "'or'", "'xor'", "'\\\\}'", "''", context=_context) in ["r'[+]'", '"-"']:
+        while self._peek("r'[+]'", '"-"', '"\\\\]"', '","', '"\\\\)"', "'to'", "'by '", "'\\\\|'", 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", '"\\\\["', "'-'", "'=='", "'!='", "'<'", "'>'", "'<='", "'>='", "'yes'", "'no'", 'NEWLINE', "r'[*]'", '"/"', '"%"', "'and'", "'or'", "'xor'", "'\\\\}'", "''", context=_context) in ["r'[+]'", '"-"']:
             _token = self._peek("r'[+]'", '"-"', context=_context)
             if _token == "r'[+]'":
                 self._scan("r'[+]'", context=_context)
@@ -332,10 +327,10 @@ class Prodo(runtime.Parser):
         type_name = self.type_name(_context)
         while 1:
             self._scan('"\\\\("', context=_context)
-            if self._peek('"\\\\("', 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', '"\\\\["', "'-'", context=_context) != '"\\\\("': break
+            if self._peek('"\\\\("', 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", '"\\\\["', "'-'", "'yes'", "'no'", context=_context) != '"\\\\("': break
         while 1:
             additive_exp = self.additive_exp(_context)
-            if self._peek('INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', '"\\\\["', "'-'", '"\\\\)"', '"\\\\]"', '","', "'to'", "'by '", "'\\\\|'", "'=='", "'!='", "'<'", "'>'", "'<='", "'>='", 'NEWLINE', "r'[*]'", '"/"', '"%"', "'and'", "'or'", "'xor'", "'\\\\}'", "r'[+]'", '"-"', "''", context=_context) not in ['INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', '"\\\\["', "'-'"]: break
+            if self._peek('INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", '"\\\\["', "'-'", "'yes'", "'no'", '"\\\\)"', '"\\\\]"', '","', "'to'", "'by '", "'\\\\|'", "'=='", "'!='", "'<'", "'>'", "'<='", "'>='", 'NEWLINE', "r'[*]'", '"/"', '"%"', "'and'", "'or'", "'xor'", "'\\\\}'", "r'[+]'", '"-"', "''", context=_context) not in ['INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", '"\\\\["', "'-'", "'yes'", "'no'"]: break
         self._scan('"\\\\)"', context=_context)
         return type_name+"("+additive_exp+")";
 
@@ -343,7 +338,7 @@ class Prodo(runtime.Parser):
         _context = self.Context(_parent, self._scanner, 'term', [])
         factor = self.factor(_context)
         S = factor
-        while self._peek("r'[*]'", '"/"', '"%"', "r'[+]'", '"-"', '"\\\\]"', '","', '"\\\\)"', "'to'", "'by '", "'\\\\|'", 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', '"\\\\["', "'-'", "'=='", "'!='", "'<'", "'>'", "'<='", "'>='", 'NEWLINE', "'and'", "'or'", "'xor'", "'\\\\}'", "''", context=_context) in ["r'[*]'", '"/"', '"%"']:
+        while self._peek("r'[*]'", '"/"', '"%"', "r'[+]'", '"-"', '"\\\\]"', '","', '"\\\\)"', "'to'", "'by '", "'\\\\|'", 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", '"\\\\["', "'-'", "'=='", "'!='", "'<'", "'>'", "'<='", "'>='", "'yes'", "'no'", 'NEWLINE', "'and'", "'or'", "'xor'", "'\\\\}'", "''", context=_context) in ["r'[*]'", '"/"', '"%"']:
             _token = self._peek("r'[*]'", '"/"', '"%"', context=_context)
             if _token == "r'[*]'":
                 self._scan("r'[*]'", context=_context)
@@ -361,7 +356,7 @@ class Prodo(runtime.Parser):
 
     def factor(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'factor', [])
-        _token = self._peek('INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', '"\\\\["', "'-'", context=_context)
+        _token = self._peek('INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", '"\\\\["', "'-'", "'yes'", "'no'", context=_context)
         if _token == 'INT':
             INT = self._scan('INT', context=_context)
             return INT
@@ -371,6 +366,9 @@ class Prodo(runtime.Parser):
         elif _token == "'\\\\{'":
             list_literal = self.list_literal(_context)
             return list_literal
+        elif _token in ["'yes'", "'no'"]:
+            boolean_literal = self.boolean_literal(_context)
+            return boolean_literal
         elif _token == "'nil'":
             self._scan("'nil'", context=_context)
             return 'None'
@@ -425,7 +423,7 @@ class Prodo(runtime.Parser):
 
     def param_list(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'param_list', [])
-        _token = self._peek("'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', "''", context=_context)
+        _token = self._peek("'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "''", context=_context)
         if _token != "''":
             type_name = self.type_name(_context)
             identifier = self.identifier(_context)
@@ -450,7 +448,7 @@ class Prodo(runtime.Parser):
             statement = self.statement(_context)
             NEWLINE = self._scan('NEWLINE', context=_context)
             S += "\t"*indents + statement
-            if self._peek("r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'structure'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', 'ID', "'end'", context=_context) not in ["r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'structure'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', 'ID']: break
+            if self._peek("r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'structure'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'ID', "'end'", context=_context) not in ["r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'structure'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'ID']: break
         self._scan("'end'", context=_context)
         indents -= 1
         return S
@@ -465,7 +463,7 @@ class Prodo(runtime.Parser):
             statement = self.statement(_context)
             NEWLINE = self._scan('NEWLINE', context=_context)
             S += "\t"*indents + statement
-            if self._peek("r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'structure'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', 'ID', "'end'", "'elseif'", "'else'", context=_context) not in ["r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'structure'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', 'ID']: break
+            if self._peek("r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'structure'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'ID', "'end'", "'elseif'", "'else'", context=_context) not in ["r'[~](.)*'", "'conclude'", "'next'", "'stop'", "'if'", "'for'", "'while'", "'loop'", "'structure'", "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'ID']: break
         indents -= 1
         return S
 
@@ -477,7 +475,7 @@ class Prodo(runtime.Parser):
             declaration_exp = self.declaration_exp(_context)
             NEWLINE = self._scan('NEWLINE', context=_context)
             S += declaration_exp
-            if self._peek("'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', "'end'", context=_context) not in ["'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE']: break
+            if self._peek("'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", "'end'", context=_context) not in ["'void'", "'bool'", "'int'", "'real'", "'str'", "'array'"]: break
         self._scan("'end'", context=_context)
         return S
 
@@ -487,23 +485,20 @@ class Prodo(runtime.Parser):
         if _token == "'conclude'":
             self._scan("'conclude'", context=_context)
             S = "return check_return_value(conclude, _fcn, "
-            _token = self._peek("''", "'yes'", "'no'", "'1'", "'0'", 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', '"\\\\["', "'-'", context=_context)
-            if _token not in ["''", "'yes'", "'no'", "'1'", "'0'"]:
+            _token = self._peek("''", 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", '"\\\\["', "'-'", "'yes'", "'no'", context=_context)
+            if _token != "''":
                 additive_exp = self.additive_exp(_context)
                 S += additive_exp
-            elif _token != "''":
-                boolean_literal = self.boolean_literal(_context)
-                S += boolean_literal
             else: # == "''"
                 self._scan("''", context=_context)
                 S += "None"
-            return S + ")"
+            return S + ")\n"
         elif _token == "'next'":
             self._scan("'next'", context=_context)
-            return "continue"
+            return "continue\n"
         else: # == "'stop'"
             self._scan("'stop'", context=_context)
-            return "break"
+            return "break\n"
 
     def fcn_name(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'fcn_name', [])
@@ -554,28 +549,17 @@ class Prodo(runtime.Parser):
 
     def boolean_exp(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'boolean_exp', [])
-        _token = self._peek("'yes'", "'no'", "'1'", "'0'", "'not'", 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', '"\\\\["', "'-'", context=_context)
-        if _token not in ["'yes'", "'no'", "'1'", "'0'"]:
-            logical_exp = self.logical_exp(_context)
-            return logical_exp
-        else: # in ["'yes'", "'no'", "'1'", "'0'"]
-            boolean_literal = self.boolean_literal(_context)
-            return boolean_literal
+        logical_exp = self.logical_exp(_context)
+        return logical_exp
 
     def boolean_literal(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'boolean_literal', [])
-        _token = self._peek("'yes'", "'no'", "'1'", "'0'", context=_context)
+        _token = self._peek("'yes'", "'no'", context=_context)
         if _token == "'yes'":
             self._scan("'yes'", context=_context)
             return 'True'
-        elif _token == "'no'":
+        else: # == "'no'"
             self._scan("'no'", context=_context)
-            return 'False'
-        elif _token == "'1'":
-            self._scan("'1'", context=_context)
-            return 'True'
-        else: # == "'0'"
-            self._scan("'0'", context=_context)
             return 'False'
 
     def logical_exp(self, _parent=None):
@@ -600,7 +584,7 @@ class Prodo(runtime.Parser):
 
     def relational_exp(self, _parent=None):
         _context = self.Context(_parent, self._scanner, 'relational_exp', [])
-        _token = self._peek("'not'", 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", 'TYPE', '"\\\\["', "'-'", context=_context)
+        _token = self._peek("'not'", 'INT', 'REAL', "'\\\\{'", "'nil'", 'STRING', 'ID', "'void'", "'bool'", "'int'", "'real'", "'str'", "'array'", '"\\\\["', "'-'", "'yes'", "'no'", context=_context)
         if _token != "'not'":
             additive_exp = self.additive_exp(_context)
             S = additive_exp
@@ -645,19 +629,23 @@ class Prodo(runtime.Parser):
             _token = self._peek("'int'", "'real'", "''", context=_context)
             if _token == "'int'":
                 self._scan("'int'", context=_context)
+                t = 'int('
             elif _token == "'real'":
                 self._scan("'real'", context=_context)
+                t = 'float('
             else: # == "''"
                 self._scan("''", context=_context)
+                t = 'assign('
             identifier = self.identifier(_context)
             S += identifier
+            if t == 'assign(': t += identifier + ','
             self._scan("':='", context=_context)
             S += " in loop_range("
             additive_exp = self.additive_exp(_context)
-            S += additive_exp
+            S += t + additive_exp + ")"
             self._scan("'to'", context=_context)
             additive_exp = self.additive_exp(_context)
-            S += "," + additive_exp
+            S += "," + t + additive_exp + ")"
             _token = self._peek("'by '", "'\\\\|'", context=_context)
             if _token == "'by '":
                 self._scan("'by '", context=_context)

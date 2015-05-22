@@ -33,7 +33,7 @@ parser Prodo:
                   | 'real'                  {{ return 'float' }}
                   | 'str'                   {{ return 'str' }}
                   | 'array'                 {{ return 'list' }}
-                  | TYPE                    {{ return TYPE }}
+                 # | TYPE                    {{ return TYPE }}
 
     rule statement_upper: exp_statement         {{ return exp_statement }}
                        | fcn_definition         {{ return fcn_definition }}
@@ -77,12 +77,12 @@ parser Prodo:
                                  struct_compound_stat           {{ A += struct_compound_stat.replace("\n",",") + ")\n" }}
                                                                 {{ return A }}
 
-    rule identifier : ID                            {{ ID = ID.replace("$", "_dol_") }}
-                                                    {{ ID = ID.replace("@", "_at_") }}
-                      ( "\\." identifier              {{ ID += "['"+identifier+"']" }}
-                      | "\\[" additive_exp "\\]"      {{ ID += "["+additive_exp+"]" }}
+    rule identifier : ID                            {{ S = ID.replace("$", "_dol_") }}
+                                                    {{ S = S.replace("@", "_at_") }}
+                      ( "\\." ID              {{ S += "['"+ID.replace("$", "_dol_").replace("@","_at_")+"']" }}
+                      | "\\[" additive_exp "\\]"      {{ S += "["+additive_exp+"]" }}
                       | ''
-                      )                             {{ return ID }}
+                      )                             {{ return S }}
 
     rule assignment_op : ":="                       {{ return "" }}
                        | r"[*]="                    {{ return "*" }}
@@ -127,6 +127,7 @@ parser Prodo:
     rule factor :        INT              {{ return INT }}
                        | REAL             {{ return REAL }}
                        | list_literal     {{ return list_literal }}
+                       | boolean_literal  {{ return boolean_literal }}
                        | 'nil'            {{ return 'None' }}
                        | STRING           {{ return STRING }}
                        | ( identifier     {{ A = identifier }}
@@ -188,12 +189,11 @@ parser Prodo:
 
     rule jump_statement : 'conclude'           {{ S = "return check_return_value(conclude, _fcn, " }}
                           ( additive_exp       {{ S += additive_exp }}
-                          | boolean_literal    {{ S += boolean_literal }}
                           | ''                 {{ S += "None" }}
                           )
-                                               {{ return S + ")" }}
-                        | 'next'               {{ return "continue" }}
-                        | 'stop'               {{ return "break" }}
+                                               {{ return S + ")\n" }}
+                        | 'next'               {{ return "continue\n" }}
+                        | 'stop'               {{ return "break\n" }}
 
 
     rule fcn_name : identifier                       {{ return identifier }}
@@ -218,12 +218,9 @@ parser Prodo:
                                                             {{ return S }}
 
     rule boolean_exp: logical_exp                           {{ return logical_exp }}
-                    | boolean_literal                       {{ return boolean_literal }}
 
     rule boolean_literal : 'yes'                            {{ return 'True' }}
                          | 'no'                             {{ return 'False' }}
-                         | '1'                              {{ return 'True' }}
-                         | '0'                              {{ return 'False' }}
 
     rule logical_exp : relational_exp                       {{ S = relational_exp }}
                        ( 'and' relational_exp               {{ S = 'logical_and('+S+','+relational_exp+')' }}
@@ -245,11 +242,15 @@ parser Prodo:
                       | '>='                                {{ return '>=' }}
 
     rule iterative_statement: ('for''\\|'                   {{ S = "for " }}
-                              ('int' | 'real' | '')
+                              ('int'                        {{ t = 'int(' }}
+                              |'real'                       {{ t = 'float(' }}
+                              |''                           {{ t = 'assign(' }}
+                              )
                               identifier                    {{ S += identifier }}
+                                                            {{ if t == 'assign(': t += identifier + ',' }}
                               ':='                          {{ S += " in loop_range(" }}
-                              additive_exp                  {{ S += additive_exp }}
-                              'to' additive_exp             {{ S += "," + additive_exp }}
+                              additive_exp                  {{ S += t + additive_exp + ")" }}
+                              'to' additive_exp             {{ S += "," + t + additive_exp + ")" }}
                               (('by ' additive_exp)         {{ S += "," + additive_exp }}
                                 '\\|'                       {{ S += "):" }}
                               | '\\|'                       {{ S += "):" }}

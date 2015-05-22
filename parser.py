@@ -2,7 +2,7 @@ import prodoParser
 from prodo import *
 # note: prodo imports 'sys'
 
-DEBUG = True
+DEBUG = False
 
 if len(sys.argv) < 2:
     fatal_err("Please supply a filename. ")
@@ -29,10 +29,16 @@ try:
     e = compile(code, '<string>', 'exec')
     exec(e)
 except NameError:
-    fatal_err("Name Error! Cannot use illegal/undeclared identifier.")
+    fatal_err("Name Error! Cannot use undeclared identifier/subprogram.")
 except KeyError:
-    fatal_err("Key Error! Tried to access a non-existent member of a structure.")
+    fatal_err("Structure Member Not Found! Tried to access a non-existent member of a structure.")
 except IndexError:
     fatal_err("Index Error! Tried to use an illegal index in array.")
+except ValueError:
+    fatal_err("Illegal Value! Detected use of illegal value in statement.")
 except EOFError:
     fatal_err("Unexpected EOF! Reached EOF while looking for input.")
+except SyntaxError:
+    fatal_err("Syntax Error! A syntax error has caused an unexpected error in translation.")
+except TypeError:
+    fatal_err("Type Error! You tried to use an invalid type in assignment/operation.")

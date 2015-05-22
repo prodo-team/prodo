@@ -1,0 +1,28 @@
+~ Prodo test file 1
+~ Outputs all leap years within an inputted range of years
+
+fcn bool isLeapYear(int x) ~ determines if a year is a leap year
+    if | x % 4 != 0 | ~ start a multiple selection statement
+        conclude no ~ conclude is the equivalent of the "return" statement
+    elseif | x % 100 != 0 |
+        conclude yes
+    elseif | x % 400 != 0 |
+        conclude no
+    else
+        conclude yes ~ 'yes' and 'no' represent the Boolean values of True and False
+    end
+end
+
+write("Enter year 1: ") ~ write is a built in subprogram that prints to the standard system output
+int year1 := read() ~ read is a built in subprogram that reads a string from the standard input
+
+write("Enter year 2: ")
+int year2 := read()
+
+write("Leap Years: \n\n")
+for | int i := year1 to year2 + 1 by 1 | ~ for each year in the range
+    if | isLeapYear(i) == yes | ~ if it is a leap year, write it
+        write( str(i) )
+        nl() ~ nl is a built in subprogram that prints a new line
+    end
+end ~ Blocks must end with the 'end' keyword

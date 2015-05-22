@@ -1,0 +1,27 @@
+~ Prodo test file 2
+~ Outputs a triangle ASCII art into a file of the user's choosing.
+~ Demonstrates subprograms, nested loops/ifs, file output, etc
+
+fcn str triangle(int height) ~ Create a triangle ASCII art
+    str output := ""
+    for | int i := 1 to height + 1 | ~ Outer loop i from 1 to height
+        for | int j := 1 to i + 1 | ~ Inner loop j from 1 to i
+            if | j % 2 == 0 and i % 2 == 0 | ~ if i and j are both even, print *
+                output += " * "
+            else   ~ Otherwise, print " % "
+                output += " % "
+            end
+        end
+        output += "\n" ~ Add a newline
+    end
+    conclude output ~ return the output and exit subprogram
+end
+
+~ ask user for height of triangle
+write("Enter triangle height: ")
+int h := read()
+~ ask user for filename to save art
+write("Enter filename to save your masterpiece: ")
+str fname := read()
+str art := triangle(h)
+f_write(fname, art)
